@@ -1,0 +1,462 @@
+<title>Gradesheet</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one ruled sheet. Summary strip on top, one entry row per subject below it, quick-add and code box underneath. */
+:root {
+  --bg: #e9eff2;
+  --surface: #ffffff;
+  --field: #f4f8fa;
+  --fg: #12222b;
+  --muted: #566a74;
+  --line: #d2dde2;
+  --accent: #0b7a75;
+  --on-accent: #ffffff;
+  --ok: #1d7a3e;
+  --bad: #b3261e;
+  --bad-bg: #fbe9e7;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e191e;
+    --surface: #15242b;
+    --field: #0f1c22;
+    --fg: #e5eef1;
+    --muted: #93a7b0;
+    --line: #28393f;
+    --accent: #4fd1c5;
+    --on-accent: #062b28;
+    --ok: #62d08a;
+    --bad: #ff8a80;
+    --bad-bg: #3a1f1d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e191e;
+  --surface: #15242b;
+  --field: #0f1c22;
+  --fg: #e5eef1;
+  --muted: #93a7b0;
+  --line: #28393f;
+  --accent: #4fd1c5;
+  --on-accent: #062b28;
+  --ok: #62d08a;
+  --bad: #ff8a80;
+  --bad-bg: #3a1f1d;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 44rem; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 6vw, 2.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+.meta { display: flex; flex-wrap: wrap; gap: 12px; }
+.meta label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+input, textarea, button { font: inherit; color: inherit; }
+.f, .meta input, textarea {
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 16px;
+  min-width: 0;
+  width: 100%;
+}
+.meta input { text-transform: none; letter-spacing: 0; color: var(--fg); font-size: 15px; }
+#term { width: 11rem; max-width: 100%; }
+#pass { width: 5rem; font-family: var(--font-data); }
+.f:focus-visible, .meta input:focus-visible, textarea:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.stat { background: var(--surface); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lab { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.val { font-family: var(--font-data); font-weight: 500; font-size: 1.6rem; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.val.small { font-family: var(--font-body); font-weight: 600; font-size: 1.05rem; line-height: 1.6; }
+.sub { font-size: 13px; color: var(--muted); font-family: var(--font-data); min-height: 1.3em; }
+.bad { color: var(--bad); }
+.good { color: var(--ok); }
+
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.head, .row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3.5rem 4.25rem 3rem 2.25rem;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 12px;
+}
+.head { padding-block: 10px; border-bottom: 1px solid var(--line); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.row + .row { border-top: 1px solid var(--line); }
+.units, .grade { font-family: var(--font-data); text-align: right; font-variant-numeric: tabular-nums; }
+.letter { font-family: var(--font-data); font-weight: 500; text-align: center; padding: 4px 0; border-radius: 6px; font-variant-numeric: tabular-nums; }
+.letter.bad { background: var(--bad-bg); }
+.del { background: none; border: 0; color: var(--muted); font-size: 22px; line-height: 1; width: 36px; height: 36px; border-radius: 6px; cursor: pointer; }
+.del:hover { color: var(--bad); background: var(--field); }
+.right { text-align: right; }
+.center { text-align: center; }
+.empty { padding: 20px 12px; color: var(--muted); }
+.foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 12px; border-top: 1px solid var(--line); }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+
+.btn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.warn { border-color: var(--bad); color: var(--bad); }
+
+.tools { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+.tools h2 { font-family: var(--font-display); font-size: 1.1rem; margin: 0; }
+.tools p { margin: 0; color: var(--muted); font-size: 14px; max-width: 65ch; }
+.tools code { font-family: var(--font-data); font-size: 13px; background: var(--field); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+textarea { font-family: var(--font-data); font-size: 15px; min-height: 5.5rem; resize: vertical; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.msg { min-height: 1.4em; font-size: 14px; color: var(--accent); margin: 0; }
+
+@media (max-width: 420px) {
+  .head, .row { gap: 6px; padding-inline: 8px; grid-template-columns: minmax(0, 1fr) 3rem 3.75rem 2.75rem 2rem; }
+  .del { width: 32px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .del, .f { transition: border-color 0.15s, background-color 0.15s, color 0.15s; }
+}
+</style>
+
+<main class="wrap">
+  <header class="top">
+    <h1>Gradesheet</h1>
+    <div class="meta">
+      <label for="term">Term<input id="term" type="text" autocomplete="off" aria-label="Term name"></label>
+      <label for="pass">Passing mark<input id="pass" type="text" inputmode="decimal" autocomplete="off"></label>
+    </div>
+  </header>
+
+  <section class="summary" aria-label="Summary" aria-live="polite">
+    <div class="stat"><span class="lab">Average</span><span class="val" id="avg">&mdash;</span><span class="sub" id="avgL">&nbsp;</span></div>
+    <div class="stat"><span class="lab">GPA (4.0)</span><span class="val" id="gpa">&mdash;</span><span class="sub">weighted by units</span></div>
+    <div class="stat"><span class="lab">Units counted</span><span class="val" id="units">0</span><span class="sub" id="cnt">&nbsp;</span></div>
+    <div class="stat"><span class="lab">Status</span><span class="val small" id="status">Add a grade</span><span class="sub" id="statusSub">&nbsp;</span></div>
+  </section>
+
+  <section class="sheet" aria-label="Subjects">
+    <div class="head" aria-hidden="true">
+      <span>Subject</span><span class="right">Units</span><span class="right">Grade %</span><span class="center">Mark</span><span></span>
+    </div>
+    <div id="rows"></div>
+    <div class="empty" id="empty" hidden>No subjects yet. Press Add subject, or paste a code below.</div>
+    <div class="foot">
+      <p class="note" id="sampleNote" hidden>These are example subjects. Type over them or press Clear all.</p>
+      <div class="actions">
+        <button class="btn primary" id="add" type="button">Add subject</button>
+        <button class="btn" id="clear" type="button">Clear all</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="tools" aria-label="Quick add">
+    <h2>Quick add</h2>
+    <p>Type less. Write one subject per line (or separate with <code>;</code>) as <code>Name units grade</code>, like <code>Math 3 88</code>. Units are optional. Copy my code gives you the same format, so you can paste it back later to restore everything.</p>
+    <label for="box" class="lab">Subjects</label>
+    <textarea id="box" spellcheck="false" placeholder="Math 3 88&#10;English 3 92&#10;Science 4 85"></textarea>
+    <div class="actions">
+      <button class="btn primary" id="qa" type="button">Add these</button>
+      <button class="btn" id="qr" type="button">Replace all</button>
+      <button class="btn" id="cp" type="button">Copy my code</button>
+    </div>
+    <p class="msg" id="msg" role="status"></p>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'gradesheet-v1';
+  var uid = 0;
+  var state = { term: '1st Semester', pass: 75, rows: [], sample: false };
+  var SAMPLE = [['Mathematics', 3, 88], ['English', 3, 92], ['Science', 4, 85], ['History', 2, 79], ['Physical Education', 1, 95]];
+  var SCALE = [[97, 'A+', 4], [93, 'A', 4], [90, 'A-', 3.7], [87, 'B+', 3.3], [83, 'B', 3], [80, 'B-', 2.7], [77, 'C+', 2.3], [73, 'C', 2], [70, 'C-', 1.7], [67, 'D+', 1.3], [63, 'D', 1], [60, 'D-', 0.7], [-Infinity, 'F', 0]];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var rowsEl = $('rows'), termEl = $('term'), passEl = $('pass'), boxEl = $('box'), msgEl = $('msg');
+
+  function mk(n, u, g) {
+    return { id: ++uid, name: n == null ? '' : String(n), units: u == null ? '' : String(u), grade: g == null ? '' : String(g) };
+  }
+  function num(v) {
+    var n = parseFloat(String(v).replace(',', '.'));
+    return isFinite(n) ? n : null;
+  }
+  function band(g) {
+    for (var i = 0; i < SCALE.length; i++) { if (g >= SCALE[i][0]) return SCALE[i]; }
+    return SCALE[SCALE.length - 1];
+  }
+  function fmt(n) { return n.toFixed(2); }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        term: state.term, pass: state.pass,
+        rows: state.rows.map(function (r) { return [r.name, r.units, r.grade]; })
+      }));
+    } catch (e) { /* storage unavailable, page still works */ }
+  }
+  function load() {
+    try {
+      var d = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (d && Array.isArray(d.rows)) {
+        if (typeof d.term === 'string') state.term = d.term;
+        if (num(d.pass) != null) state.pass = num(d.pass);
+        state.rows = d.rows.map(function (r) { return mk(r[0], r[1], r[2]); });
+        return true;
+      }
+    } catch (e) { /* ignore */ }
+    return false;
+  }
+
+  function findRow(id) {
+    for (var i = 0; i < state.rows.length; i++) { if (state.rows[i].id === id) return state.rows[i]; }
+    return null;
+  }
+
+  function rowEl(r) {
+    var d = document.createElement('div');
+    d.className = 'row';
+    d.dataset.id = r.id;
+    d.innerHTML =
+      '<input class="f name" data-k="name" type="text" placeholder="Subject" aria-label="Subject" autocomplete="off">' +
+      '<input class="f units" data-k="units" type="text" inputmode="decimal" placeholder="3" aria-label="Units" autocomplete="off">' +
+      '<input class="f grade" data-k="grade" type="text" inputmode="decimal" placeholder="0-100" aria-label="Grade in percent" autocomplete="off">' +
+      '<output class="letter" aria-label="Letter mark">&mdash;</output>' +
+      '<button class="del" type="button" aria-label="Remove subject">&times;</button>';
+    d.querySelector('.name').value = r.name;
+    d.querySelector('.units').value = r.units;
+    d.querySelector('.grade').value = r.grade;
+    updateRow(d, r);
+    return d;
+  }
+
+  function updateRow(d, r) {
+    var out = d.querySelector('.letter');
+    var g = num(r.grade);
+    out.className = 'letter';
+    if (g == null) { out.textContent = '\u2014'; return; }
+    if (g < 0 || g > 100) { out.textContent = '?'; out.classList.add('bad'); return; }
+    out.textContent = band(g)[1];
+    if (g < state.pass) out.classList.add('bad');
+  }
+
+  function updateSummary() {
+    var pts = 0, gp = 0, un = 0, below = 0, n = 0;
+    state.rows.forEach(function (r) {
+      var g = num(r.grade);
+      if (g == null || g < 0 || g > 100) return;
+      var u = num(r.units);
+      var w = (u == null || u <= 0) ? 1 : u;
+      pts += g * w; gp += band(g)[2] * w; un += w; n++;
+      if (g < state.pass) below++;
+    });
+    var avgEl = $('avg'), st = $('status');
+    st.className = 'val small';
+    if (!n) {
+      avgEl.textContent = '\u2014'; $('avgL').textContent = '\u00a0';
+      $('gpa').textContent = '\u2014'; $('units').textContent = '0'; $('cnt').textContent = '\u00a0';
+      st.textContent = 'Add a grade'; $('statusSub').textContent = '\u00a0';
+      return;
+    }
+    var avg = pts / un;
+    avgEl.textContent = fmt(avg) + '%';
+    $('avgL').textContent = band(avg)[1];
+    $('gpa').textContent = fmt(gp / un);
+    $('units').textContent = String(Math.round(un * 100) / 100);
+    $('cnt').textContent = n + (n === 1 ? ' subject' : ' subjects');
+    if (below === 0) {
+      st.textContent = 'All passing'; st.classList.add('good');
+      $('statusSub').textContent = 'at or above ' + state.pass;
+    } else {
+      st.textContent = below + ' below ' + state.pass; st.classList.add('bad');
+      $('statusSub').textContent = 'check marked rows';
+    }
+  }
+
+  function updateAll() {
+    Array.prototype.forEach.call(rowsEl.children, function (d) {
+      var r = findRow(+d.dataset.id);
+      if (r) updateRow(d, r);
+    });
+    updateSummary();
+    $('empty').hidden = state.rows.length > 0;
+    $('sampleNote').hidden = !state.sample;
+  }
+
+  function render() {
+    rowsEl.textContent = '';
+    state.rows.forEach(function (r) { rowsEl.appendChild(rowEl(r)); });
+    updateAll();
+  }
+
+  function addRow() {
+    var r = mk();
+    state.rows.push(r);
+    var d = rowEl(r);
+    rowsEl.appendChild(d);
+    updateAll();
+    d.querySelector('.name').focus();
+    save();
+  }
+
+  rowsEl.addEventListener('input', function (e) {
+    var t = e.target, row = t.closest('.row');
+    if (!row || !t.dataset.k) return;
+    var r = findRow(+row.dataset.id);
+    if (!r) return;
+    r[t.dataset.k] = t.value;
+    state.sample = false;
+    $('sampleNote').hidden = true;
+    updateRow(row, r);
+    updateSummary();
+    save();
+  });
+
+  rowsEl.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !e.target.dataset.k) return;
+    e.preventDefault();
+    var all = Array.prototype.slice.call(rowsEl.querySelectorAll('input'));
+    var i = all.indexOf(e.target);
+    if (i < all.length - 1) { all[i + 1].focus(); all[i + 1].select(); } else { addRow(); }
+  });
+
+  rowsEl.addEventListener('click', function (e) {
+    var b = e.target.closest('.del');
+    if (!b) return;
+    var row = b.closest('.row');
+    var id = +row.dataset.id;
+    state.rows = state.rows.filter(function (r) { return r.id !== id; });
+    state.sample = false;
+    row.remove();
+    updateAll();
+    save();
+  });
+
+  termEl.addEventListener('input', function () { state.term = termEl.value; save(); });
+  passEl.addEventListener('input', function () {
+    var n = num(passEl.value);
+    if (n != null) { state.pass = n; updateAll(); save(); }
+  });
+
+  $('add').addEventListener('click', addRow);
+
+  var clearTimer = null;
+  $('clear').addEventListener('click', function () {
+    var b = $('clear');
+    if (!b.classList.contains('warn')) {
+      b.classList.add('warn'); b.textContent = 'Tap again to clear';
+      clearTimer = setTimeout(function () { b.classList.remove('warn'); b.textContent = 'Clear all'; }, 3000);
+      return;
+    }
+    clearTimeout(clearTimer);
+    b.classList.remove('warn'); b.textContent = 'Clear all';
+    state.rows = []; state.sample = false;
+    render(); save();
+  });
+
+  function parse(text) {
+    var out = [];
+    text.split(/[\n;]+/).forEach(function (line) {
+      line = line.trim();
+      if (!line) return;
+      var t = line.split(/\s+/), g = null, u = null;
+      if (t.length > 1 && /^\d+([.,]\d+)?$/.test(t[t.length - 1])) {
+        g = t.pop();
+        if (t.length > 1 && /^\d+([.,]\d+)?$/.test(t[t.length - 1]) && num(t[t.length - 1]) <= 12) { u = t.pop(); }
+      }
+      var name = t.join(' ');
+      if (name) out.push([name, u, g]);
+    });
+    return out;
+  }
+
+  function say(s) { msgEl.textContent = s; }
+
+  function importRows(replace) {
+    var list = parse(boxEl.value);
+    if (!list.length) { say('Nothing to add yet. Try: Math 3 88'); return; }
+    if (replace) state.rows = [];
+    list.forEach(function (x) { state.rows.push(mk(x[0], x[1], x[2])); });
+    state.sample = false;
+    render(); save();
+    boxEl.value = '';
+    say((replace ? 'Replaced with ' : 'Added ') + list.length + (list.length === 1 ? ' subject.' : ' subjects.'));
+  }
+  $('qa').addEventListener('click', function () { importRows(false); });
+  $('qr').addEventListener('click', function () { importRows(true); });
+
+  $('cp').addEventListener('click', function () {
+    var code = state.rows.filter(function (r) { return r.name.trim(); }).map(function (r) {
+      var parts = [r.name.trim().replace(/[;\n]/g, ' ')];
+      if (r.units !== '') parts.push(r.units);
+      if (r.grade !== '') parts.push(r.grade);
+      return parts.join(' ');
+    }).join('; ');
+    if (!code) { say('Add a subject first.'); return; }
+    boxEl.value = code;
+    boxEl.select();
+    var done = function () { say('Code copied. Paste it here later and press Replace all.'); };
+    var fail = function () { say('Code is selected above. Press Ctrl+C or long-press to copy.'); };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done, fail);
+      } else { fail(); }
+    } catch (e) { fail(); }
+  });
+
+  if (!load()) {
+    state.rows = SAMPLE.map(function (s) { return mk(s[0], s[1], s[2]); });
+    state.sample = true;
+  }
+  termEl.value = state.term;
+  passEl.value = String(state.pass);
+  render();
+})();
+</script>
